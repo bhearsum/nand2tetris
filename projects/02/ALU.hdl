@@ -52,5 +52,14 @@ CHIP ALU {
     And16(a=realx, b=realy, out=andxy);
     Mux16(a=andxy, b=sumxy, sel=f, out=outval);
     Not16(in=outval, out=notoutval);
-    Mux16(a=outval, b=notoutval, sel=no, out=out);
+    Mux16(a=outval, b=notoutval, sel=no, out[0..7]=out1, out[8..14]=out2, out[15]=outMSBit);
+    Mux16(b[0..7]=out1, b[8..14]=out2, b[15]=outMSBit, sel=true, out=out);
+
+    // Status bits
+    Or8Way(in=out1, out=out1isnull);
+    Or8Way(in[0..6]=out2, in[7]=outMSBit, out=out2isnull);
+    Or(a=out1isnull, b=out2isnull, out=iszero);
+    Not(in=iszero, out=zr);
+
+    And(a=outMSBit, b=true, out=ng);
 }
