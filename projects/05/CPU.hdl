@@ -39,5 +39,44 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Determine if we have an A or C instruction
+    DMux(in=true, sel=instruction[15], a=ainst, b=cinst);
+
+    // If we're doing a C instruction, it is expected that the a register already
+    // holds an _address_ of a memory value (not an actual value)
+    Or(a=ainst, b=instruction[5], out=loada);
+    Mux16(a=aluout, b=instruction, sel=ainst, out=aval);
+    ARegister(in=aval, load=loada, out=aout);
+
+    And(a=cinst, b=instruction[4], out=loadd);
+    DRegister(in=aluout, load=loadd, out=dout);
+
+    Mux16(a=aout, b=inM, sel=instruction[12], out=aorm);
+    ALU(x=dout, y=aorm, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluout, zr=aluzr, ng=alung);
+
+    Or16(a=aluout, out=outM);
+    And(a=cinst, b=instruction[3], out=writeM);
+    Or16(a=aout, out[0..14]=addressM);
+
+    // look for jumps
+    Not(in=aluzr, out=notzr);
+    Not(in=alung, out=notng);
+    And(a=notzr, b=notng, out=gt);
+    Or(a=aluzr, b=gt, out=gte);
+    And(a=aluzr, b=alung, out=lte);
+
+    And(a=gt, b=instruction[0], out=jumpgt);
+    And(a=aluzr, b=instruction[1], out=jumpzr);
+    Or(a=jumpzr, b=jumpgt, out=jumpgte);
+    And(a=alung, b=instruction[2], out=jumplt);
+    Or(a=jumpzr, b=jumplt, out=jumplte);
+    And(a=instruction[0], b=instruction[2], out=jumpnotzerotmp);
+    And(a=jumpnotzerotmp, b=notzr, out=jumpnotzr);
+    And(a=instruction[0], b=instruction[1], out=jumptmp);
+    And(a=jumptmp, b=instruction[2], out=jump);
+
+    Or8Way(in[0]=jumpgt, in[1]=jumpzr, in[2]=jumpgte, in[3]=jumplt, in[4]=jumpnotzr, in[5]=jumplte, in[6]=jump, out=hasjumpinst);
+    And(a=hasjumpinst, b=cinst, out=shouldjump);
+
+    PC(in=aout, load=shouldjump, inc=true, reset=reset, out[0..14]=pc);
 }
