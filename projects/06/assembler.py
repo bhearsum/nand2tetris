@@ -1,22 +1,34 @@
 #!/usr/bin/env python3
 #
 # TODO:
-#  * Implement compute translation
 #  * Implement symbol parsing
 
 import sys
 from typing import Tuple, Union
 
 
-JUMPS = {
-    None: 0,
-    "JGT": 0b001,
-    "JEQ": 0b010,
-    "JGE": 0b011,
-    "JLT": 0b100,
-    "JNE": 0b101,
-    "JLE": 0b110,
-    "JMP": 0b111,
+COMPUTE_INSTRUCTIONS = {
+    # M versions also exist for all compute instructions
+    # with A in them. They are identical to the A version
+    # but with 0b1000000000000 added to them.
+    "0":   0b101010000000,
+    "1":   0b111111000000,
+    "-1":  0b111010000000,
+    "D":   0b001100000000,
+    "A":   0b110000000000,
+    "!D":  0b001101000000,
+    "!A":  0b110001000000,
+    "-D":  0b001111000000,
+    "-A":  0b110011000000,
+    "D+1": 0b011111000000,
+    "A+1": 0b110111000000,
+    "D-1": 0b001110000000,
+    "A-1": 0b110010000000,
+    "D+A": 0b000010000000,
+    "D-A": 0b010011000000,
+    "A-D": 0b000111000000,
+    "D&A": 0b000000000000,
+    "D|A": 0b010101000000,
 }
 DESTS = {
     None: 0,
@@ -27,6 +39,16 @@ DESTS = {
     "AM":  0b101000,
     "AD":  0b110000,
     "AMD": 0b111000,
+}
+JUMPS = {
+    None: 0,
+    "JGT": 0b001,
+    "JEQ": 0b010,
+    "JGE": 0b011,
+    "JLT": 0b100,
+    "JNE": 0b101,
+    "JLE": 0b110,
+    "JMP": 0b111,
 }
 
 
@@ -58,6 +80,14 @@ def parse_c_instruction(inst: str) -> Tuple[str,
 
 
 def c_instruction(comp: str, dest: str, jump: str) -> str:
+    static = 0b1110000000000000
+    a_bit = 0
+    if "M" in comp:
+        a_bit = 0b1000000000000
+        comp = comp.replace("M", "A")
+
+    comp_bits = COMPUTE_INSTRUCTIONS[comp]
+
     if dest:
         dest_bits = DESTS[dest]
     else:
@@ -68,7 +98,8 @@ def c_instruction(comp: str, dest: str, jump: str) -> str:
     else:
         jump_bits = 0
 
-    return "{:0>16b}".format(dest_bits + jump_bits)
+    inst = static | a_bit | comp_bits | dest_bits | jump_bits
+    return "{:0>16b}".format(inst)
 
 
 def main(asm):
