@@ -4,7 +4,16 @@ import sys
 from typing import Tuple, Union
 
 
-VALID_JUMPS = ("JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP")
+JUMPS = {
+    None: None,
+    "JGT": 0b001,
+    "JEQ": 0b010,
+    "JGE": 0b011,
+    "JLT": 0b100,
+    "JNE": 0b101,
+    "JLE": 0b110,
+    "JMP": 0b111,
+}
 VALID_DESTS = ("M", "D", "MD", "A", "AM", "AD", "AMD")
 
 
@@ -29,14 +38,18 @@ def parse_c_instruction(inst: str) -> Tuple[str,
     if dest and dest not in VALID_DESTS:
         raise ValueError(f"Invalid dest: {dest}")
 
-    if jump and jump not in VALID_JUMPS:
+    if jump and jump not in JUMPS.keys():
         raise ValueError(f"Invalid jump: {jump}")
 
     return comp, dest, jump
 
 
-def c_instruction(inst: str) -> str:
-    pass
+def c_instruction(comp: str, dest: str, jump: str) -> str:
+    if jump:
+        jump_bits = JUMPS[jump]
+    else:
+        jump_bits = 0
+    return "{:0>16b}".format(jump_bits)
 
 
 def main(asm):
@@ -66,7 +79,7 @@ def main(asm):
 
         # C instruction
         comp, dest, jump = parse_c_instruction(instruction)
-        print(c_instruction(addr))
+        print(c_instruction(comp, dest, jump))
 
 
 if __name__ == "__main__":
