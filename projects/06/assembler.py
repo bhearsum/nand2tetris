@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+#
+# TODO:
+#  * Implement compute translation
+#  * Implement symbol parsing
 
 import sys
 from typing import Tuple, Union
