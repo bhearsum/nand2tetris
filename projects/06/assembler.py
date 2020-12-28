@@ -5,7 +5,7 @@ from typing import Tuple, Union
 
 
 JUMPS = {
-    None: None,
+    None: 0,
     "JGT": 0b001,
     "JEQ": 0b010,
     "JGE": 0b011,
@@ -14,7 +14,16 @@ JUMPS = {
     "JLE": 0b110,
     "JMP": 0b111,
 }
-VALID_DESTS = ("M", "D", "MD", "A", "AM", "AD", "AMD")
+DESTS = {
+    None: 0,
+    "M":   0b001000,
+    "D":   0b010000,
+    "MD":  0b011000,
+    "A":   0b100000,
+    "AM":  0b101000,
+    "AD":  0b110000,
+    "AMD": 0b111000,
+}
 
 
 def a_instruction(addr: str) -> str:
@@ -35,21 +44,27 @@ def parse_c_instruction(inst: str) -> Tuple[str,
     else:
         comp = inst
 
-    if dest and dest not in VALID_DESTS:
+    if dest and dest not in DESTS:
         raise ValueError(f"Invalid dest: {dest}")
 
-    if jump and jump not in JUMPS.keys():
+    if jump and jump not in JUMPS:
         raise ValueError(f"Invalid jump: {jump}")
 
     return comp, dest, jump
 
 
 def c_instruction(comp: str, dest: str, jump: str) -> str:
+    if dest:
+        dest_bits = DESTS[dest]
+    else:
+        dest_bits = 0
+
     if jump:
         jump_bits = JUMPS[jump]
     else:
         jump_bits = 0
-    return "{:0>16b}".format(jump_bits)
+
+    return "{:0>16b}".format(dest_bits + jump_bits)
 
 
 def main(asm):
