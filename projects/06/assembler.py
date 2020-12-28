@@ -8,8 +8,8 @@ VALID_JUMPS = ("JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP")
 VALID_DESTS = ("M", "D", "MD", "A", "AM", "AD", "AMD")
 
 
-def a_instruction(inst: str) -> str:
-    pass
+def a_instruction(addr: str) -> str:
+    return "{:0>16b}".format(int(addr))
 
 
 def parse_c_instruction(inst: str) -> Tuple[str,
@@ -42,7 +42,11 @@ def c_instruction(inst: str) -> str:
 def main(asm):
     for line in open(asm).readlines():
         # Get rid of comments
-        instruction, _ = line.split("/")
+        # TODO: do we need to deal with block comments?
+        if "/" in line:
+            instruction, _ = line.split("/", 1)
+        else:
+            instruction = line
         instruction = instruction.strip()
 
         # Skip blank lines or comment lines
