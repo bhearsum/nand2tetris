@@ -50,10 +50,41 @@ JUMPS = {
     "JLE": 0b110,
     "JMP": 0b111,
 }
+SYMBOL_TABLE = {}
+memory_addresses = iter(range(0, 0x3FFF))
+
+
+def is_int(val: str) -> bool:
+    try:
+        int(val)
+        return True
+    except ValueError:
+        return False
+
+
+# We might need to do this in two passes:
+# 1) go over all instructions and keep symbols in them, while
+#    noting which explicit memory addresses are used
+# 2) resolve symbols - allocating free memory addresses for them
+#    at the same time
+def resolve_symbol(sym: str) -> int:
+    if sym in SYMBOL_TABLE:
+        return SYMBOL_TABLE[sym]
+
+    if is_int(sym):
+        SYMBOL_TABLE[sym] = int(sym)
+    else:
+        next_addr = next(memory_addresses)
+        while next_addr in SYMBOL_TABLE.values():
+            next_addr = next(memory_addresses)
+
+        SYMBOL_TABLE[sym] = next_addr
+
+    return SYMBOL_TABLE[sym]
 
 
 def a_instruction(addr: str) -> str:
-    return "{:0>16b}".format(int(addr))
+    return "{:0>16b}".format(resolve_symbol(addr))
 
 
 def parse_c_instruction(inst: str) -> Tuple[str,
@@ -102,8 +133,12 @@ def c_instruction(comp: str, dest: str, jump: str) -> str:
     return "{:0>16b}".format(inst)
 
 
-def main(asm):
-    for line in open(asm).readlines():
+def stage1(asm: str) -> str:
+    return asm
+
+
+def stage2(asm: str) -> str:
+    for line in asm.splitlines():
         # Get rid of comments
         # TODO: do we need to deal with block comments?
         if "/" in line:
@@ -139,4 +174,7 @@ if __name__ == "__main__":
         print("Output will be written to stdout")
         sys.exit(1)
 
-    main(sys.argv[1])
+    with open(sys.argv[1]) as f:
+        stage1_output = stage1(f.read())
+
+    stage2(stage1_output)
