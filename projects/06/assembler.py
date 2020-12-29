@@ -50,7 +50,10 @@ JUMPS = {
     "JLE": 0b110,
     "JMP": 0b111,
 }
-SYMBOL_TABLE = {}
+SYMBOL_TABLE = {
+    "SCREEN": 0b100000000000000,
+    "KBD": 0, # TBD
+}
 JUMP_TABLE = {}
 memory_addresses = iter(range(0, 0x3FFF))
 
