@@ -51,6 +51,7 @@ JUMPS = {
     "JMP": 0b111,
 }
 SYMBOL_TABLE = {}
+JUMP_TABLE = {}
 memory_addresses = iter(range(0, 0x3FFF))
 
 
@@ -68,6 +69,9 @@ def is_int(val: str) -> bool:
 # 2) resolve symbols - allocating free memory addresses for them
 #    at the same time
 def resolve_symbol(sym: str) -> int:
+    if sym in JUMP_TABLE:
+        return JUMP_TABLE[sym]
+
     if sym in SYMBOL_TABLE:
         return SYMBOL_TABLE[sym]
 
@@ -134,7 +138,30 @@ def c_instruction(comp: str, dest: str, jump: str) -> str:
 
 
 def stage1(asm: str) -> str:
-    return asm
+    """Strips away comments and blank lines and adds
+    jump labels to lookup table."""
+
+    preprocessed_asm = []
+    lineno = 0
+    for line in asm.splitlines():
+        if "/" in line:
+            line, _ = line.split("/", 1)
+        else:
+            line = line
+        line = line.strip()
+
+        if not line:
+            continue
+
+        if line.startswith("("):
+            label = line.strip("()")
+            JUMP_TABLE[label] = lineno
+        else:
+            lineno += 1
+
+        preprocessed_asm.append(line)
+
+    return "\n".join(preprocessed_asm)
 
 
 def stage2(asm: str) -> str:
@@ -147,8 +174,8 @@ def stage2(asm: str) -> str:
             instruction = line
         instruction = instruction.strip()
 
-        # Skip blank lines or comment lines
-        if not instruction:
+        # Skip blank lines, comment lines, or jump labels
+        if not instruction or instruction.startswith("("):
             continue
 
         # A instruction
