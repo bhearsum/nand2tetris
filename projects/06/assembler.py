@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-#
-# TODO:
-#  * Implement symbol parsing
 
+import pprint
 import sys
 from typing import Tuple, Union
 
@@ -51,8 +49,29 @@ JUMPS = {
     "JMP": 0b111,
 }
 SYMBOL_TABLE = {
-    "SCREEN": 0b100000000000000,
-    "KBD": 0, # TBD
+    "R0":     0,
+    "SP":     0,
+    "R1":     1,
+    "LCL":    1,
+    "R2":     2,
+    "ARG":    2,
+    "R3":     3,
+    "THIS":   3,
+    "R4":     4,
+    "THAT":   4,
+    "R5":     5,
+    "R6":     6,
+    "R7":     7,
+    "R8":     8,
+    "R9":     9,
+    "R10":    10,
+    "R11":    11,
+    "R12":    12,
+    "R13":    13,
+    "R14":    14,
+    "R15":    15,
+    "SCREEN": 0x4000,
+    "KBD":    0x6000,
 }
 JUMP_TABLE = {}
 memory_addresses = iter(range(0, 0x3FFF))
@@ -79,13 +98,13 @@ def resolve_symbol(sym: str) -> int:
         return SYMBOL_TABLE[sym]
 
     if is_int(sym):
-        SYMBOL_TABLE[sym] = int(sym)
-    else:
-        next_addr = next(memory_addresses)
-        while next_addr in SYMBOL_TABLE.values():
-            next_addr = next(memory_addresses)
+        return int(sym)
 
-        SYMBOL_TABLE[sym] = next_addr
+    next_addr = next(memory_addresses)
+    while next_addr in SYMBOL_TABLE.values():
+        next_addr = next(memory_addresses)
+
+    SYMBOL_TABLE[sym] = next_addr
 
     return SYMBOL_TABLE[sym]
 
@@ -208,3 +227,8 @@ if __name__ == "__main__":
         stage1_output = stage1(f.read())
 
     stage2(stage1_output)
+
+    print("SYMBOL TABLE:", file=sys.stderr)
+    print(pprint.pformat(SYMBOL_TABLE), file=sys.stderr)
+    print("JUMP TABLE:", file=sys.stderr)
+    print(pprint.pformat(JUMP_TABLE), file=sys.stderr)
