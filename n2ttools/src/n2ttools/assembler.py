@@ -2,7 +2,7 @@
 
 import pprint
 import sys
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 
 COMPUTE_INSTRUCTIONS = {
@@ -48,7 +48,7 @@ JUMPS = {
     "JLE": 0b110,
     "JMP": 0b111,
 }
-SYMBOL_TABLE = {
+SYMBOL_TABLE: Dict[str, int] = {
     "R0":     0,
     "SP":     0,
     "R1":     1,
@@ -73,7 +73,7 @@ SYMBOL_TABLE = {
     "SCREEN": 0x4000,
     "KBD":    0x6000,
 }
-JUMP_TABLE = {}
+JUMP_TABLE: Dict[str, int] = {}
 memory_addresses = iter(range(0, 0x3FFF))
 
 
@@ -136,7 +136,7 @@ def parse_c_instruction(inst: str) -> Tuple[str,
     return comp, dest, jump
 
 
-def c_instruction(comp: str, dest: str, jump: str) -> str:
+def c_instruction(comp: str, dest: Union[str, None], jump: Union[str, None]) -> str:
     static = 0b1110000000000000
     a_bit = 0
     if "M" in comp:
@@ -186,7 +186,7 @@ def stage1(asm: str) -> str:
     return "\n".join(preprocessed_asm)
 
 
-def stage2(asm: str) -> str:
+def stage2(asm: str) -> None:
     for line in asm.splitlines():
         # Get rid of comments
         # TODO: do we need to deal with block comments?
