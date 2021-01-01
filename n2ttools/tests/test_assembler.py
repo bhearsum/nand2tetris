@@ -1,6 +1,6 @@
 import unittest
 
-from assembler import parse_c_instruction
+from n2ttools.assembler import parse_c_instruction
 
 
 class AssemblerTests(unittest.TestCase):

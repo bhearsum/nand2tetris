@@ -216,7 +216,7 @@ def stage2(asm: str) -> str:
         print(c_instruction(comp, dest, jump))
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} file_to_assemble")
         print()

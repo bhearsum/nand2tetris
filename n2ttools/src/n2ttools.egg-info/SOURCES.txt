@@ -1,0 +1,9 @@
+setup.py
+src/n2ttools/__init__.py
+src/n2ttools/assembler.py
+src/n2ttools.egg-info/PKG-INFO
+src/n2ttools.egg-info/SOURCES.txt
+src/n2ttools.egg-info/dependency_links.txt
+src/n2ttools.egg-info/entry_points.txt
+src/n2ttools.egg-info/not-zip-safe
+src/n2ttools.egg-info/top_level.txt

@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: n2ttools
+Version: 0.5
+Summary: nand2tetris compiler/vm/assembler/etc toolchain
+Home-page: https://github.com/bhearsum/nand2tetris/tree/main/n2ttools
+Author: Ben Hearsum
+Author-email: ben@hearsum.ca
+License: MPL-2.0
+Description: UNKNOWN
+Platform: UNKNOWN

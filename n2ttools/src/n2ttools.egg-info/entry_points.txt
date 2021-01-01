@@ -1,0 +1,3 @@
+[console_scripts]
+n2tasm = n2ttools.assembler:main
+
