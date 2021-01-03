@@ -1,6 +1,7 @@
 setup.py
 src/n2ttools/__init__.py
 src/n2ttools/assembler.py
+src/n2ttools/vm2asm.py
 src/n2ttools.egg-info/PKG-INFO
 src/n2ttools.egg-info/SOURCES.txt
 src/n2ttools.egg-info/dependency_links.txt

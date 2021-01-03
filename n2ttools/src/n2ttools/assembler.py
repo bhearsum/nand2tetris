@@ -4,20 +4,19 @@ import pprint
 import sys
 from typing import Dict, Tuple, Union
 
-
 COMPUTE_INSTRUCTIONS = {
     # M versions also exist for all compute instructions
     # with A in them. They are identical to the A version
     # but with 0b1000000000000 added to them.
-    "0":   0b101010000000,
-    "1":   0b111111000000,
-    "-1":  0b111010000000,
-    "D":   0b001100000000,
-    "A":   0b110000000000,
-    "!D":  0b001101000000,
-    "!A":  0b110001000000,
-    "-D":  0b001111000000,
-    "-A":  0b110011000000,
+    "0": 0b101010000000,
+    "1": 0b111111000000,
+    "-1": 0b111010000000,
+    "D": 0b001100000000,
+    "A": 0b110000000000,
+    "!D": 0b001101000000,
+    "!A": 0b110001000000,
+    "-D": 0b001111000000,
+    "-A": 0b110011000000,
     "D+1": 0b011111000000,
     "A+1": 0b110111000000,
     "D-1": 0b001110000000,
@@ -30,12 +29,12 @@ COMPUTE_INSTRUCTIONS = {
 }
 DESTS = {
     None: 0,
-    "M":   0b001000,
-    "D":   0b010000,
-    "MD":  0b011000,
-    "A":   0b100000,
-    "AM":  0b101000,
-    "AD":  0b110000,
+    "M": 0b001000,
+    "D": 0b010000,
+    "MD": 0b011000,
+    "A": 0b100000,
+    "AM": 0b101000,
+    "AD": 0b110000,
     "AMD": 0b111000,
 }
 JUMPS = {
@@ -49,29 +48,29 @@ JUMPS = {
     "JMP": 0b111,
 }
 SYMBOL_TABLE: Dict[str, int] = {
-    "R0":     0,
-    "SP":     0,
-    "R1":     1,
-    "LCL":    1,
-    "R2":     2,
-    "ARG":    2,
-    "R3":     3,
-    "THIS":   3,
-    "R4":     4,
-    "THAT":   4,
-    "R5":     5,
-    "R6":     6,
-    "R7":     7,
-    "R8":     8,
-    "R9":     9,
-    "R10":    10,
-    "R11":    11,
-    "R12":    12,
-    "R13":    13,
-    "R14":    14,
-    "R15":    15,
+    "R0": 0,
+    "SP": 0,
+    "R1": 1,
+    "LCL": 1,
+    "R2": 2,
+    "ARG": 2,
+    "R3": 3,
+    "THIS": 3,
+    "R4": 4,
+    "THAT": 4,
+    "R5": 5,
+    "R6": 6,
+    "R7": 7,
+    "R8": 8,
+    "R9": 9,
+    "R10": 10,
+    "R11": 11,
+    "R12": 12,
+    "R13": 13,
+    "R14": 14,
+    "R15": 15,
     "SCREEN": 0x4000,
-    "KBD":    0x6000,
+    "KBD": 0x6000,
 }
 JUMP_TABLE: Dict[str, int] = {}
 memory_addresses = iter(range(0, 0x3FFF))
@@ -113,9 +112,7 @@ def a_instruction(addr: str) -> str:
     return "{:0>16b}".format(resolve_symbol(addr))
 
 
-def parse_c_instruction(inst: str) -> Tuple[str,
-                                            Union[str, None],
-                                            Union[str, None]]:
+def parse_c_instruction(inst: str) -> Tuple[str, Union[str, None], Union[str, None]]:
     comp = None
     dest = None
     jump = None
@@ -203,8 +200,7 @@ def stage2(asm: str) -> None:
         # A instruction
         if instruction.startswith("@"):
             if len(instruction) < 2:
-                print("Error: A (@) instruction has no address or symbol",
-                      file=sys.stderr)
+                print("Error: A (@) instruction has no address or symbol", file=sys.stderr)
                 sys.exit(1)
 
             _, addr = instruction.split("@", 2)
