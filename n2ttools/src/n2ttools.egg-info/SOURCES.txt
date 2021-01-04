@@ -1,3 +1,4 @@
+pyproject.toml
 setup.py
 src/n2ttools/__init__.py
 src/n2ttools/assembler.py

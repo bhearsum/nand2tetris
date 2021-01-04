@@ -1,3 +1,4 @@
 [console_scripts]
 n2tasm = n2ttools.assembler:main
+vm2asm = n2ttools.vm2asm:main
 

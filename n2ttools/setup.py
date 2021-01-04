@@ -17,6 +17,9 @@ setup(
     license="MPL-2.0",
     zip_safe=False,
     entry_points={
-        "console_scripts": ["n2tasm = n2ttools.assembler:main"],
+        "console_scripts": [
+            "n2tasm = n2ttools.assembler:main",
+            "vm2asm = n2ttools.vm2asm:main",
+        ],
     },
 )
