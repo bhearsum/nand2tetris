@@ -47,25 +47,24 @@ def translate(f: TextIO) -> Generator[str, None, None]:
     for line in f.read().splitlines():
         if line.startswith("push"):
             _, segment, n = line.split()
-            # TODO: update these comments, fuck the tests
             yield f"@{n}"  # load the desired constant into the A register
-            yield "D=A"    # set it to D, so we can keep it after the next inst
+            yield "D=A"    # set it to D, so we can keep it after the next A inst
             yield "@SP"    # load the pointer to the next spot in the stack into A
-            yield "A=M"
-            yield "M=D"    # set it to the desired constant value
-            yield "D=A+1"  # set D to the next spot in the stack
-            yield "@SP"     # load 0 (the address of SP) into A
+            yield "A=M"    # Set A to the address of next spot in the stack
+            yield "M=D"    # Set the top of the stack to the desired constant
+            yield "D=A+1"  # set D to the next spot in the stack (current top + 1)
+            yield "@SP"    # load the address of the the former stack top
             yield "M=D"    # and set it to the new top of the stack
 
         if line.startswith("add"):
-            yield "@SP"    # pop the topmost stack item and store it in D
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "M=D+M"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
+            yield "@SP"    # load the pointer to the next in the stack into A
+            yield "A=M-1"  # decrease it by 1 to get the topmost stack item address into A
+            yield "D=M"    # set that to D
+            yield "A=A-1"  # decrease it again to get to the next item in the stack
+            yield "M=D+M"  # add them together and store the result in the same spot
+            yield "D=A+1"  # set D to the next location in the stack
+            yield "@SP"    # load the stack pointer into A
+            yield "M=D"    # and set it to the new topmost location of the stack
 
 
 def main():
