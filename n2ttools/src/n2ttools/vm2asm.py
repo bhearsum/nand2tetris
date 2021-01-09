@@ -37,26 +37,135 @@ def split_functions(vmcode: str) -> VmFunctions:
     return fns
 
 
+# Base address for various memory segments
+TEMP = 5
+STATIC = 16
+STACK = 256
+# I have no idea why these must start at these addresses, but
+# if we chose other addresses, the supplied tests fail
+# TODO: do we have to get these dynamically, maybe?
+# seems like it, because the this/that base addresses change
+# between test scripts
+LOCAL = 300
+ARGUMENT = 400
+POINTER = 2048  # this one might be wrong still
+THIS = 3030
+THAT = 3040
+
+
 def translate(f: TextIO) -> Generator[str, None, None]:
     label_count = 0
 
-    # Initialize the stack pointer
-    yield "@256"
+    # Initialize pointers to various memory segments
+    yield "// begin init"
+    yield f"@{STACK}"
     yield "D=A"
     yield "@SP"
     yield "M=D"
 
+    yield f"@{LOCAL}"
+    yield "D=A"
+    yield "@LCL"
+    yield "M=D"
+
+    yield f"@{ARGUMENT}"
+    yield "D=A"
+    yield "@ARG"
+    yield "M=D"
+
+    yield f"@{THIS}"
+    yield "D=A"
+    yield "@THIS"
+    yield "M=D"
+
+    yield f"@{THAT}"
+    yield "D=A"
+    yield "@THAT"
+    yield "M=D"
+    yield "// end init"
+
     for line in f.read().splitlines():
         if line.startswith("push"):
             _, segment, n = line.split()
-            yield f"@{n}"  # load the desired constant into the A register
-            yield "D=A"  # set it to D, so we can keep it after the next A inst
-            yield "@SP"  # load the pointer to the next spot in the stack into A
-            yield "A=M"  # Set A to the address of next spot in the stack
-            yield "M=D"  # Set the top of the stack to the desired constant
-            yield "D=A+1"  # set D to the next spot in the stack (current top + 1)
-            yield "@SP"  # load the address of the the former stack top
-            yield "M=D"  # and set it to the new top of the stack
+            if segment == "constant":
+                yield f"// start push constant {n}"
+                yield f"@{n}"  # load the desired constant into the A register
+                yield "D=A"  # set it to D, so we can keep it after the next A inst
+                yield "@SP"  # load the pointer to the next spot in the stack into A
+                yield "A=M"  # Set A to the address of next spot in the stack
+                yield "M=D"  # Set the top of the stack to the desired constant
+                yield "D=A+1"  # set D to the next spot in the stack (current top + 1)
+                yield "@SP"  # load the address of the the former stack top
+                yield "M=D"  # and set it to the new top of the stack
+                yield f"// end push constant {n}"
+            else:
+                offset = -1
+                if segment == "temp":
+                    offset = TEMP
+                elif segment == "static":
+                    offset = STATIC
+                elif segment == "pointer":
+                    offset = POINTER
+                elif segment == "argument":
+                    offset = ARGUMENT
+                elif segment == "local":
+                    offset = LOCAL
+                elif segment == "this":
+                    offset = THIS
+                elif segment == "that":
+                    offset = THAT
+
+                if offset == -1:
+                    raise ValueError(f"Invalid memory segment: {segment}")
+
+                offset += int(n)
+
+                yield f"// start push {segment} {offset}"
+                yield f"@{offset}"
+                yield "D=M"
+                yield "@SP"
+                yield "A=M"
+                yield "M=D"
+                yield "D=A+1"
+                yield "@SP"
+                yield "M=D"
+                yield f"// end push {segment} {offset}"
+
+        if line.startswith("pop"):
+            _, segment, n = line.split()
+            offset = -1
+            if segment == "temp":
+                offset = TEMP
+            elif segment == "static":
+                offset = STATIC
+            elif segment == "pointer":
+                offset = POINTER
+            elif segment == "argument":
+                offset = ARGUMENT
+            elif segment == "local":
+                offset = LOCAL
+            elif segment == "this":
+                offset = THIS
+            elif segment == "that":
+                offset = THAT
+
+            if offset == -1:
+                raise ValueError(f"Invalid memory segment: {segment}")
+
+            offset += int(n)
+
+            yield f"// start pop {segment} {offset}"
+            yield "@SP"
+            yield "A=M-1"
+            yield "D=M"
+            yield f"@{offset}"
+            yield "M=D"
+            yield "@SP"
+            yield "A=M"
+            yield "D=A-1"
+            yield "@SP"
+            yield "M=D"
+            yield f"// end pop {segment} {offset}"
 
         if line.startswith("add"):
             yield "@SP"  # load the pointer to the next in the stack into A
