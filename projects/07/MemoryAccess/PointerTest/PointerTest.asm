@@ -1,25 +1,3 @@
-// begin init
-@256
-D=A
-@SP
-M=D
-@300
-D=A
-@LCL
-M=D
-@400
-D=A
-@ARG
-M=D
-@3030
-D=A
-@THIS
-M=D
-@3040
-D=A
-@THAT
-M=D
-// end init
 // start push constant 3030
 @3030
 D=A
@@ -30,18 +8,18 @@ D=A+1
 @SP
 M=D
 // end push constant 3030
-// start pop pointer 2048
+// start pop pointer 0
 @SP
 A=M-1
 D=M
-@2048
+@3
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop pointer 2048
+// end pop pointer 0
 // start push constant 3040
 @3040
 D=A
@@ -52,18 +30,19 @@ D=A+1
 @SP
 M=D
 // end push constant 3040
-// start pop pointer 2049
+// start pop pointer 1
 @SP
 A=M-1
 D=M
-@2049
+@3
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop pointer 2049
+// end pop pointer 1
 // start push constant 32
 @32
 D=A
@@ -74,18 +53,21 @@ D=A+1
 @SP
 M=D
 // end push constant 32
-// start pop this 3032
+// start pop this 2
 @SP
 A=M-1
 D=M
-@3032
+@THIS
+A=M
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop this 3032
+// end pop this 2
 // start push constant 46
 @46
 D=A
@@ -96,20 +78,27 @@ D=A+1
 @SP
 M=D
 // end push constant 46
-// start pop that 3046
+// start pop that 6
 @SP
 A=M-1
 D=M
-@3046
+@THAT
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop that 3046
-// start push pointer 2048
-@2048
+// end pop that 6
+// start push pointer 0
+@3
 D=M
 @SP
 A=M
@@ -117,9 +106,10 @@ M=D
 D=A+1
 @SP
 M=D
-// end push pointer 2048
-// start push pointer 2049
-@2049
+// end push pointer 0
+// start push pointer 1
+@3
+A=A+1
 D=M
 @SP
 A=M
@@ -127,7 +117,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push pointer 2049
+// end push pointer 1
 @SP
 A=M-1
 D=M
@@ -136,8 +126,11 @@ M=D+M
 D=A+1
 @SP
 M=D
-// start push this 3032
-@3032
+// start push this 2
+@THIS
+A=M
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -145,7 +138,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push this 3032
+// end push this 2
 @SP
 A=M-1
 D=M
@@ -154,8 +147,15 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push that 3046
-@3046
+// start push that 6
+@THAT
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -163,7 +163,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push that 3046
+// end push that 6
 @SP
 A=M-1
 D=M

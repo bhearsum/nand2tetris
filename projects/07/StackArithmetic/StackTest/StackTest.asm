@@ -1,7 +1,4 @@
-@256
-D=A
-@SP
-M=D
+// start push constant 17
 @17
 D=A
 @SP
@@ -10,6 +7,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 17
+// start push constant 17
 @17
 D=A
 @SP
@@ -18,6 +17,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 17
 @SP
 A=M-1
 D=M
@@ -41,6 +41,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 17
 @17
 D=A
 @SP
@@ -49,6 +50,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 17
+// start push constant 16
 @16
 D=A
 @SP
@@ -57,6 +60,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 16
 @SP
 A=M-1
 D=M
@@ -80,6 +84,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 16
 @16
 D=A
 @SP
@@ -88,6 +93,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 16
+// start push constant 17
 @17
 D=A
 @SP
@@ -96,6 +103,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 17
 @SP
 A=M-1
 D=M
@@ -119,6 +127,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 892
 @892
 D=A
 @SP
@@ -127,6 +136,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 892
+// start push constant 891
 @891
 D=A
 @SP
@@ -135,6 +146,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 891
 @SP
 A=M-1
 D=M
@@ -158,6 +170,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 891
 @891
 D=A
 @SP
@@ -166,6 +179,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 891
+// start push constant 892
 @892
 D=A
 @SP
@@ -174,6 +189,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 892
 @SP
 A=M-1
 D=M
@@ -197,6 +213,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 891
 @891
 D=A
 @SP
@@ -205,6 +222,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 891
+// start push constant 891
 @891
 D=A
 @SP
@@ -213,6 +232,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 891
 @SP
 A=M-1
 D=M
@@ -236,6 +256,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 32767
 @32767
 D=A
 @SP
@@ -244,6 +265,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32767
+// start push constant 32766
 @32766
 D=A
 @SP
@@ -252,6 +275,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32766
 @SP
 A=M-1
 D=M
@@ -275,6 +299,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 32766
 @32766
 D=A
 @SP
@@ -283,6 +308,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32766
+// start push constant 32767
 @32767
 D=A
 @SP
@@ -291,6 +318,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32767
 @SP
 A=M-1
 D=M
@@ -314,6 +342,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 32766
 @32766
 D=A
 @SP
@@ -322,6 +351,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32766
+// start push constant 32766
 @32766
 D=A
 @SP
@@ -330,6 +361,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 32766
 @SP
 A=M-1
 D=M
@@ -353,6 +385,7 @@ M=-1
 @SP
 D=M+1
 M=D
+// start push constant 57
 @57
 D=A
 @SP
@@ -361,6 +394,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 57
+// start push constant 31
 @31
 D=A
 @SP
@@ -369,6 +404,8 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 31
+// start push constant 53
 @53
 D=A
 @SP
@@ -377,6 +414,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 53
 @SP
 A=M-1
 D=M
@@ -385,6 +423,7 @@ M=D+M
 D=A+1
 @SP
 M=D
+// start push constant 112
 @112
 D=A
 @SP
@@ -393,6 +432,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 112
 @SP
 A=M-1
 D=M
@@ -415,6 +455,7 @@ M=D&M
 D=A+1
 @SP
 M=D
+// start push constant 82
 @82
 D=A
 @SP
@@ -423,6 +464,7 @@ M=D
 D=A+1
 @SP
 M=D
+// end push constant 82
 @SP
 A=M-1
 D=M

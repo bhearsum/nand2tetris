@@ -1,25 +1,3 @@
-// begin init
-@256
-D=A
-@SP
-M=D
-@300
-D=A
-@LCL
-M=D
-@400
-D=A
-@ARG
-M=D
-@3000
-D=A
-@THIS
-M=D
-@3010
-D=A
-@THAT
-M=D
-// end init
 // start push constant 111
 @111
 D=A
@@ -50,44 +28,59 @@ D=A+1
 @SP
 M=D
 // end push constant 888
-// start pop static 24
+// start pop static 8
 @SP
 A=M-1
 D=M
-@24
+@16
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop static 24
-// start pop static 19
+// end pop static 8
+// start pop static 3
 @SP
 A=M-1
 D=M
-@19
+@16
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop static 19
-// start pop static 17
+// end pop static 3
+// start pop static 1
 @SP
 A=M-1
 D=M
-@17
+@16
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop static 17
-// start push static 19
-@19
+// end pop static 1
+// start push static 3
+@16
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -95,9 +88,10 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 19
-// start push static 17
-@17
+// end push static 3
+// start push static 1
+@16
+A=A+1
 D=M
 @SP
 A=M
@@ -105,7 +99,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 17
+// end push static 1
 @SP
 A=M-1
 D=M
@@ -114,8 +108,16 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push static 24
-@24
+// start push static 8
+@16
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -123,7 +125,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 24
+// end push static 8
 @SP
 A=M-1
 D=M

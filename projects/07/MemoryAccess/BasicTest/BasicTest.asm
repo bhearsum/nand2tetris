@@ -1,25 +1,3 @@
-// begin init
-@256
-D=A
-@SP
-M=D
-@300
-D=A
-@LCL
-M=D
-@400
-D=A
-@ARG
-M=D
-@3000
-D=A
-@THIS
-M=D
-@3010
-D=A
-@THAT
-M=D
-// end init
 // start push constant 10
 @10
 D=A
@@ -30,18 +8,19 @@ D=A+1
 @SP
 M=D
 // end push constant 10
-// start pop local 300
+// start pop local 0
 @SP
 A=M-1
 D=M
-@300
+@LCL
+A=M
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop local 300
+// end pop local 0
 // start push constant 21
 @21
 D=A
@@ -62,30 +41,35 @@ D=A+1
 @SP
 M=D
 // end push constant 22
-// start pop argument 402
+// start pop argument 2
 @SP
 A=M-1
 D=M
-@402
+@ARG
+A=M
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop argument 402
-// start pop argument 401
+// end pop argument 2
+// start pop argument 1
 @SP
 A=M-1
 D=M
-@401
+@ARG
+A=M
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop argument 401
+// end pop argument 1
 // start push constant 36
 @36
 D=A
@@ -96,18 +80,25 @@ D=A+1
 @SP
 M=D
 // end push constant 36
-// start pop this 3006
+// start pop this 6
 @SP
 A=M-1
 D=M
-@3006
+@THIS
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop this 3006
+// end pop this 6
 // start push constant 42
 @42
 D=A
@@ -128,30 +119,39 @@ D=A+1
 @SP
 M=D
 // end push constant 45
-// start pop that 3015
+// start pop that 5
 @SP
 A=M-1
 D=M
-@3015
+@THAT
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop that 3015
-// start pop that 3012
+// end pop that 5
+// start pop that 2
 @SP
 A=M-1
 D=M
-@3012
+@THAT
+A=M
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop that 3012
+// end pop that 2
 // start push constant 510
 @510
 D=A
@@ -162,20 +162,27 @@ D=A+1
 @SP
 M=D
 // end push constant 510
-// start pop temp 11
+// start pop temp 6
 @SP
 A=M-1
 D=M
-@11
+@5
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 M=D
 @SP
 A=M
 D=A-1
 @SP
 M=D
-// end pop temp 11
-// start push local 300
-@300
+// end pop temp 6
+// start push local 0
+@LCL
+A=M
 D=M
 @SP
 A=M
@@ -183,9 +190,15 @@ M=D
 D=A+1
 @SP
 M=D
-// end push local 300
-// start push that 3015
-@3015
+// end push local 0
+// start push that 5
+@THAT
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -193,7 +206,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push that 3015
+// end push that 5
 @SP
 A=M-1
 D=M
@@ -202,8 +215,10 @@ M=D+M
 D=A+1
 @SP
 M=D
-// start push argument 401
-@401
+// start push argument 1
+@ARG
+A=M
+A=A+1
 D=M
 @SP
 A=M
@@ -211,7 +226,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push argument 401
+// end push argument 1
 @SP
 A=M-1
 D=M
@@ -220,8 +235,15 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push this 3006
-@3006
+// start push this 6
+@THIS
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -229,9 +251,16 @@ M=D
 D=A+1
 @SP
 M=D
-// end push this 3006
-// start push this 3006
-@3006
+// end push this 6
+// start push this 6
+@THIS
+A=M
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -239,7 +268,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push this 3006
+// end push this 6
 @SP
 A=M-1
 D=M
@@ -256,8 +285,14 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push temp 11
-@11
+// start push temp 6
+@5
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
+A=A+1
 D=M
 @SP
 A=M
@@ -265,7 +300,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push temp 11
+// end push temp 6
 @SP
 A=M-1
 D=M

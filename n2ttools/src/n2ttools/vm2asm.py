@@ -53,36 +53,47 @@ THIS = 3030
 THAT = 3040
 
 
+SEGMENT_SYMBOLS = {
+        "pointer": 3,
+        "temp": "5",
+        "static": "16",
+        "argument": "ARG",
+        "local": "LCL",
+        "this": "THIS",
+        "that": "THAT",
+}
+
 def translate(f: TextIO) -> Generator[str, None, None]:
     label_count = 0
 
     # Initialize pointers to various memory segments
-    yield "// begin init"
-    yield f"@{STACK}"
-    yield "D=A"
-    yield "@SP"
-    yield "M=D"
-
-    yield f"@{LOCAL}"
-    yield "D=A"
-    yield "@LCL"
-    yield "M=D"
-
-    yield f"@{ARGUMENT}"
-    yield "D=A"
-    yield "@ARG"
-    yield "M=D"
-
-    yield f"@{THIS}"
-    yield "D=A"
-    yield "@THIS"
-    yield "M=D"
-
-    yield f"@{THAT}"
-    yield "D=A"
-    yield "@THAT"
-    yield "M=D"
-    yield "// end init"
+    # TODO: see if this is still needed after project 7
+#    yield "// begin init"
+#    yield f"@{STACK}"
+#    yield "D=A"
+#    yield "@SP"
+#    yield "M=D"
+#
+#    yield f"@{LOCAL}"
+#    yield "D=A"
+#    yield "@LCL"
+#    yield "M=D"
+#
+#    yield f"@{ARGUMENT}"
+#    yield "D=A"
+#    yield "@ARG"
+#    yield "M=D"
+#
+#    yield f"@{THIS}"
+#    yield "D=A"
+#    yield "@THIS"
+#    yield "M=D"
+#
+#    yield f"@{THAT}"
+#    yield "D=A"
+#    yield "@THAT"
+#    yield "M=D"
+#    yield "// end init"
 
     for line in f.read().splitlines():
         if line.startswith("push"):
@@ -99,29 +110,24 @@ def translate(f: TextIO) -> Generator[str, None, None]:
                 yield "M=D"  # and set it to the new top of the stack
                 yield f"// end push constant {n}"
             else:
-                offset = -1
-                if segment == "temp":
-                    offset = TEMP
-                elif segment == "static":
-                    offset = STATIC
-                elif segment == "pointer":
-                    offset = POINTER
-                elif segment == "argument":
-                    offset = ARGUMENT
-                elif segment == "local":
-                    offset = LOCAL
-                elif segment == "this":
-                    offset = THIS
-                elif segment == "that":
-                    offset = THAT
+                sym = SEGMENT_SYMBOLS.get(segment)
 
-                if offset == -1:
-                    raise ValueError(f"Invalid memory segment: {segment}")
+                if not sym:
+                    raise ValueError(f"Couldn't resolve segment: {segment}")
 
-                offset += int(n)
-
-                yield f"// start push {segment} {offset}"
-                yield f"@{offset}"
+                yield f"// start push {segment} {n}"
+                yield f"@{sym}"
+                # temp and static are not pointers
+                # temp, static, and pointer are not pointers to other
+                # base addresses. (pointer is a 2 word segment that
+                # holds the base addresses of this and that. when we're
+                # pushing from pointer, we need to get those - not
+                # the values stored in this or that)
+                if segment not in ("temp", "static", "pointer"):
+                    yield "A=M"
+                # Get to the right offset
+                for i in range(int(n)):
+                    yield "A=A+1"
                 yield "D=M"
                 yield "@SP"
                 yield "A=M"
@@ -129,43 +135,38 @@ def translate(f: TextIO) -> Generator[str, None, None]:
                 yield "D=A+1"
                 yield "@SP"
                 yield "M=D"
-                yield f"// end push {segment} {offset}"
+                yield f"// end push {segment} {n}"
 
         if line.startswith("pop"):
             _, segment, n = line.split()
-            offset = -1
-            if segment == "temp":
-                offset = TEMP
-            elif segment == "static":
-                offset = STATIC
-            elif segment == "pointer":
-                offset = POINTER
-            elif segment == "argument":
-                offset = ARGUMENT
-            elif segment == "local":
-                offset = LOCAL
-            elif segment == "this":
-                offset = THIS
-            elif segment == "that":
-                offset = THAT
 
-            if offset == -1:
-                raise ValueError(f"Invalid memory segment: {segment}")
+            sym = SEGMENT_SYMBOLS.get(segment)
 
-            offset += int(n)
+            if not sym:
+                raise ValueError(f"Couldn't resolve segment: {segment}")
 
-            yield f"// start pop {segment} {offset}"
+            yield f"// start pop {segment} {n}"
             yield "@SP"
             yield "A=M-1"
             yield "D=M"
-            yield f"@{offset}"
+            yield f"@{sym}"
+            # Get to the right offset
+            # temp, static, and pointer are not pointers to other
+            # base addresses. (pointer is a 2 word segment that
+            # holds the base addresses of this and that. when we're
+            # popping to pointer, we need to update those - not
+            # the values stored in this or that)
+            if segment not in ("temp", "static", "pointer"):
+                yield "A=M"
+            for i in range(int(n)):
+                yield "A=A+1"
             yield "M=D"
             yield "@SP"
             yield "A=M"
             yield "D=A-1"
             yield "@SP"
             yield "M=D"
-            yield f"// end pop {segment} {offset}"
+            yield f"// end pop {segment} {n}"
 
         if line.startswith("add"):
             yield "@SP"  # load the pointer to the next in the stack into A
