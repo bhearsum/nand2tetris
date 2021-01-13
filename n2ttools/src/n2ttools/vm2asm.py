@@ -53,49 +53,73 @@ THIS = 3030
 THAT = 3040
 
 
-SEGMENT_SYMBOLS = {
-        "pointer": 3,
-        "temp": "5",
-        "static": "16",
-        "argument": "ARG",
-        "local": "LCL",
-        "this": "THIS",
-        "that": "THAT",
+SEGMENT_SYMBOLS: Dict[str, str] = {
+    "pointer": "3",
+    "temp": "5",
+    "static": "16",
+    "argument": "ARG",
+    "local": "LCL",
+    "this": "THIS",
+    "that": "THAT",
 }
+
 
 def translate(f: TextIO) -> Generator[str, None, None]:
     label_count = 0
 
     # Initialize pointers to various memory segments
     # TODO: see if this is still needed after project 7
-#    yield "// begin init"
-#    yield f"@{STACK}"
-#    yield "D=A"
-#    yield "@SP"
-#    yield "M=D"
-#
-#    yield f"@{LOCAL}"
-#    yield "D=A"
-#    yield "@LCL"
-#    yield "M=D"
-#
-#    yield f"@{ARGUMENT}"
-#    yield "D=A"
-#    yield "@ARG"
-#    yield "M=D"
-#
-#    yield f"@{THIS}"
-#    yield "D=A"
-#    yield "@THIS"
-#    yield "M=D"
-#
-#    yield f"@{THAT}"
-#    yield "D=A"
-#    yield "@THAT"
-#    yield "M=D"
-#    yield "// end init"
+    #    yield "// begin init"
+    #    yield f"@{STACK}"
+    #    yield "D=A"
+    #    yield "@SP"
+    #    yield "M=D"
+    #
+    #    yield f"@{LOCAL}"
+    #    yield "D=A"
+    #    yield "@LCL"
+    #    yield "M=D"
+    #
+    #    yield f"@{ARGUMENT}"
+    #    yield "D=A"
+    #    yield "@ARG"
+    #    yield "M=D"
+    #
+    #    yield f"@{THIS}"
+    #    yield "D=A"
+    #    yield "@THIS"
+    #    yield "M=D"
+    #
+    #    yield f"@{THAT}"
+    #    yield "D=A"
+    #    yield "@THAT"
+    #    yield "M=D"
+    #    yield "// end init"
 
     for line in f.read().splitlines():
+        line = line.split("/")[0].strip()
+
+        if line.startswith("label"):
+            _, label = line.split(" ")
+            yield f"({label})"
+
+        if line.startswith("goto"):
+            _, label = line.split(" ")
+            yield f"// start goto {label}"
+            yield f"@{label}"
+            yield "0;JMP"
+            yield f"// end goto {label}"
+
+        if line.startswith("if-goto"):
+            _, label = line.split(" ")
+            yield f"// start if-goto {label}"
+            yield "@SP"
+            yield "AM=M-1"
+            yield "D=M"
+            yield f"@{label}"
+            yield "D;JNE"
+            yield f"// end if-goto {label}"
+
         if line.startswith("push"):
             _, segment, n = line.split()
             if segment == "constant":
@@ -162,10 +186,7 @@ def translate(f: TextIO) -> Generator[str, None, None]:
                 yield "A=A+1"
             yield "M=D"
             yield "@SP"
-            yield "A=M"
-            yield "D=A-1"
-            yield "@SP"
-            yield "M=D"
+            yield "M=M-1"
             yield f"// end pop {segment} {n}"
 
         if line.startswith("add"):

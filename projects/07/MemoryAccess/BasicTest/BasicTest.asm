@@ -16,10 +16,7 @@ D=M
 A=M
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop local 0
 // start push constant 21
 @21
@@ -51,10 +48,7 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop argument 2
 // start pop argument 1
 @SP
@@ -65,10 +59,7 @@ A=M
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop argument 1
 // start push constant 36
 @36
@@ -94,10 +85,7 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop this 6
 // start push constant 42
 @42
@@ -132,10 +120,7 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop that 5
 // start pop that 2
 @SP
@@ -147,10 +132,7 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop that 2
 // start push constant 510
 @510
@@ -175,10 +157,7 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
+M=M-1
 // end pop temp 6
 // start push local 0
 @LCL
