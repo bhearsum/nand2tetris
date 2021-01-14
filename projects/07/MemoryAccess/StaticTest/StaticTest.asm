@@ -28,7 +28,7 @@ D=A+1
 @SP
 M=D
 // end push constant 888
-// start pop static 8
+// start pop 16 8
 @SP
 A=M-1
 D=M
@@ -43,12 +43,9 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
-// end pop static 8
-// start pop static 3
+M=M-1
+// end pop 16 8
+// start pop 16 3
 @SP
 A=M-1
 D=M
@@ -58,12 +55,9 @@ A=A+1
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
-// end pop static 3
-// start pop static 1
+M=M-1
+// end pop 16 3
+// start pop 16 1
 @SP
 A=M-1
 D=M
@@ -71,12 +65,9 @@ D=M
 A=A+1
 M=D
 @SP
-A=M
-D=A-1
-@SP
-M=D
-// end pop static 1
-// start push static 3
+M=M-1
+// end pop 16 1
+// start push 16 3
 @16
 A=A+1
 A=A+1
@@ -88,8 +79,8 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 3
-// start push static 1
+// end push 16 3
+// start push 16 1
 @16
 A=A+1
 D=M
@@ -99,7 +90,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 1
+// end push 16 1
 @SP
 A=M-1
 D=M
@@ -108,7 +99,7 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push static 8
+// start push 16 8
 @16
 A=A+1
 A=A+1
@@ -125,7 +116,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push static 8
+// end push 16 8
 @SP
 A=M-1
 D=M

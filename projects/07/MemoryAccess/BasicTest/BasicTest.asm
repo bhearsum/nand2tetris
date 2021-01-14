@@ -8,7 +8,7 @@ D=A+1
 @SP
 M=D
 // end push constant 10
-// start pop local 0
+// start pop LCL 0
 @SP
 A=M-1
 D=M
@@ -17,7 +17,7 @@ A=M
 M=D
 @SP
 M=M-1
-// end pop local 0
+// end pop LCL 0
 // start push constant 21
 @21
 D=A
@@ -38,7 +38,7 @@ D=A+1
 @SP
 M=D
 // end push constant 22
-// start pop argument 2
+// start pop ARG 2
 @SP
 A=M-1
 D=M
@@ -49,8 +49,8 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop argument 2
-// start pop argument 1
+// end pop ARG 2
+// start pop ARG 1
 @SP
 A=M-1
 D=M
@@ -60,7 +60,7 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop argument 1
+// end pop ARG 1
 // start push constant 36
 @36
 D=A
@@ -71,7 +71,7 @@ D=A+1
 @SP
 M=D
 // end push constant 36
-// start pop this 6
+// start pop THIS 6
 @SP
 A=M-1
 D=M
@@ -86,7 +86,7 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop this 6
+// end pop THIS 6
 // start push constant 42
 @42
 D=A
@@ -107,7 +107,7 @@ D=A+1
 @SP
 M=D
 // end push constant 45
-// start pop that 5
+// start pop THAT 5
 @SP
 A=M-1
 D=M
@@ -121,8 +121,8 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop that 5
-// start pop that 2
+// end pop THAT 5
+// start pop THAT 2
 @SP
 A=M-1
 D=M
@@ -133,7 +133,7 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop that 2
+// end pop THAT 2
 // start push constant 510
 @510
 D=A
@@ -144,7 +144,7 @@ D=A+1
 @SP
 M=D
 // end push constant 510
-// start pop temp 6
+// start pop 5 6
 @SP
 A=M-1
 D=M
@@ -158,8 +158,8 @@ A=A+1
 M=D
 @SP
 M=M-1
-// end pop temp 6
-// start push local 0
+// end pop 5 6
+// start push LCL 0
 @LCL
 A=M
 D=M
@@ -169,8 +169,8 @@ M=D
 D=A+1
 @SP
 M=D
-// end push local 0
-// start push that 5
+// end push LCL 0
+// start push THAT 5
 @THAT
 A=M
 A=A+1
@@ -185,7 +185,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push that 5
+// end push THAT 5
 @SP
 A=M-1
 D=M
@@ -194,7 +194,7 @@ M=D+M
 D=A+1
 @SP
 M=D
-// start push argument 1
+// start push ARG 1
 @ARG
 A=M
 A=A+1
@@ -205,7 +205,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push argument 1
+// end push ARG 1
 @SP
 A=M-1
 D=M
@@ -214,7 +214,7 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push this 6
+// start push THIS 6
 @THIS
 A=M
 A=A+1
@@ -230,8 +230,8 @@ M=D
 D=A+1
 @SP
 M=D
-// end push this 6
-// start push this 6
+// end push THIS 6
+// start push THIS 6
 @THIS
 A=M
 A=A+1
@@ -247,7 +247,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push this 6
+// end push THIS 6
 @SP
 A=M-1
 D=M
@@ -264,7 +264,7 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start push temp 6
+// start push 5 6
 @5
 A=A+1
 A=A+1
@@ -279,7 +279,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push temp 6
+// end push 5 6
 @SP
 A=M-1
 D=M

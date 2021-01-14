@@ -8,7 +8,7 @@ D=A+1
 @SP
 M=D
 // end push constant 0
-// start pop local 0
+// start pop LCL 0
 @SP
 A=M-1
 D=M
@@ -17,9 +17,9 @@ A=M
 M=D
 @SP
 M=M-1
-// end pop local 0
+// end pop LCL 0
 (LOOP_START)
-// start push argument 0
+// start push ARG 0
 @ARG
 A=M
 D=M
@@ -29,8 +29,8 @@ M=D
 D=A+1
 @SP
 M=D
-// end push argument 0
-// start push local 0
+// end push ARG 0
+// start push LCL 0
 @LCL
 A=M
 D=M
@@ -40,7 +40,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push local 0
+// end push LCL 0
 @SP
 A=M-1
 D=M
@@ -49,7 +49,7 @@ M=D+M
 D=A+1
 @SP
 M=D
-// start pop local 0
+// start pop LCL 0
 @SP
 A=M-1
 D=M
@@ -58,8 +58,8 @@ A=M
 M=D
 @SP
 M=M-1
-// end pop local 0
-// start push argument 0
+// end pop LCL 0
+// start push ARG 0
 @ARG
 A=M
 D=M
@@ -69,7 +69,7 @@ M=D
 D=A+1
 @SP
 M=D
-// end push argument 0
+// end push ARG 0
 // start push constant 1
 @1
 D=A
@@ -88,7 +88,7 @@ M=M-D
 D=A+1
 @SP
 M=D
-// start pop argument 0
+// start pop ARG 0
 @SP
 A=M-1
 D=M
@@ -97,8 +97,8 @@ A=M
 M=D
 @SP
 M=M-1
-// end pop argument 0
-// start push argument 0
+// end pop ARG 0
+// start push ARG 0
 @ARG
 A=M
 D=M
@@ -108,14 +108,15 @@ M=D
 D=A+1
 @SP
 M=D
-// end push argument 0
+// end push ARG 0
 // start if-goto LOOP_START
 @SP
 AM=M-1
 D=M
 @LOOP_START
 D;JNE
-// start push local 0
+// end if-goto LOOP_START
+// start push LCL 0
 @LCL
 A=M
 D=M
@@ -125,4 +126,4 @@ M=D
 D=A+1
 @SP
 M=D
-// end push local 0
+// end push LCL 0
