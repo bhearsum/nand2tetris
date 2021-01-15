@@ -85,7 +85,7 @@ def pop(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, No
     yield f"// end pop {location} {offset}"
 
 
-def translate_instruction(inst: str, label_count: int) -> Generator[str, None, int]:
+def translate_instruction(inst: str, label_count: int, current_function: str = "") -> Generator[str, None, int]:
     if inst.startswith("label"):
         _, label = inst.split(" ")
         yield f"({label})"
@@ -107,15 +107,40 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "D;JNE"
         yield f"// end if-goto {label}"
 
-    # TODO: this should be part of dealing with a call, not a return
     if inst.startswith("return"):
+        # pop an item off the stack (this is the return value)
+        yield from pop("R13", is_ptr=False)
+        # then restore the previous that, this, local, and arg pointers,
+        # which are next on the stack
+        for ptr in ("THAT", "THIS", "ARG", "LCL"):
+            yield from pop(ptr, is_ptr=False)
+        # next is the return address
+        yield from pop("R14", is_ptr=False)
+        # pop local args away from the stack
+        # TODO: we don't actually care about these values
+        # so we could adjust the SP address instead
+        for i in range(FUNCTIONS[current_function][1] - 1):
+            yield from pop("temp", is_ptr=False)
+        # and then we have to pop away args, like we did for locals
+        # we also don't care about them
+        for i in range(FUNCTIONS[current_function][0] - 1):
+            yield from pop("temp", is_ptr=False)
+        # then push the return value back onto the stack
+        yield from push("R13", is_ptr=False)
+        # and jump to the return address
+        yield "@R14"
+        yield "A=M"
+        yield "0;JMP"
+
+    # TODO: this should be part of dealing with a call, not a return
+    if inst.startswith("returnyyy"):
         # pop an item off the stack (this is the return value)
         yield from pop("R13", is_ptr=False)
         # pop the next item to get the return address
         yield from pop("R14", is_ptr=False)
-        # push the return value back on the stack
+        # then push the return value back onto the stack
         yield from push("R13", is_ptr=False)
-        # jump to the return address
+        # push the return value back on the stack
         yield "@R14"
         yield "0;JMP"
 
@@ -314,16 +339,14 @@ def translate(f: TextIO) -> Generator[str, None, None]:
             yield f"// start function {name}"
             yield f"({name})"
 
-        if current_function:
-            if " local " in line:
-                function_locals = max(function_locals, int(line.split(" ")[-1]))
+        if current_function and " local " in line:
+            function_locals = max(function_locals, int(line.split(" ")[-1]) + 1)
+            FUNCTIONS[current_function] = (function_args, function_locals)
 
-            if line.startswith("return"):
-                FUNCTIONS[current_function] = (function_args, function_locals)
+        label_count = yield from translate_instruction(line, label_count, current_function)
 
+        if current_function and line.startswith("return"):
             current_function = ""
-
-        label_count = yield from translate_instruction(line, label_count)
 
 
 def main():
