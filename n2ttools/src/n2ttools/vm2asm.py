@@ -27,7 +27,10 @@ SEGMENT_SYMBOLS: Dict[str, str] = {
     "that": "THAT",
 }
 
-PTR_SEGMENTS: Tuple[str] = ("argument", "local", "this", "that")
+PTR_SEGMENTS: Tuple[str, str, str, str] = ("argument", "local", "this", "that")
+
+# Function name -> (number of args, number of locals)
+FUNCTIONS: Dict[str, Tuple[int, int]] = {}
 
 
 def push(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, None]:
@@ -52,7 +55,7 @@ def push(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, N
         if is_ptr:
             yield "A=M"
         # Get to the right offset
-        for i in range(int(offset)):
+        for i in range(offset):
             yield "A=A+1"
         yield "D=M"
         yield "@SP"
@@ -74,12 +77,191 @@ def pop(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, No
     yield f"@{location}"
     if is_ptr:
         yield "A=M"
-    for i in range(int(offset)):
+    for i in range(offset):
         yield "A=A+1"
     yield "M=D"
     yield "@SP"
     yield "M=M-1"
     yield f"// end pop {location} {offset}"
+
+
+def translate_instruction(inst: str, label_count: int) -> Generator[str, None, int]:
+    if inst.startswith("label"):
+        _, label = inst.split(" ")
+        yield f"({label})"
+
+    if inst.startswith("goto"):
+        _, label = inst.split(" ")
+        yield f"// start goto {label}"
+        yield f"@{label}"
+        yield "0;JMP"
+        yield f"// end goto {label}"
+
+    if inst.startswith("if-goto"):
+        _, label = inst.split(" ")
+        yield f"// start if-goto {label}"
+        yield "@SP"
+        yield "AM=M-1"
+        yield "D=M"
+        yield f"@{label}"
+        yield "D;JNE"
+        yield f"// end if-goto {label}"
+
+    # TODO: this should be part of dealing with a call, not a return
+    if inst.startswith("return"):
+        # pop an item off the stack (this is the return value)
+        yield from pop("R13", is_ptr=False)
+        # pop the next item to get the return address
+        yield from pop("R14", is_ptr=False)
+        # push the return value back on the stack
+        yield from push("R13", is_ptr=False)
+        # jump to the return address
+        yield "@R14"
+        yield "0;JMP"
+
+    if inst.startswith("push"):
+        _, segment, n = inst.split()
+        yield from push(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
+
+    if inst.startswith("pop"):
+        _, segment, n = inst.split()
+        yield from pop(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
+
+    if inst.startswith("add"):
+        yield "@SP"  # load the pointer to the next in the stack into A
+        yield "A=M-1"  # decrease it by 1 to get the topmost stack item address into A
+        yield "D=M"  # set that to D
+        yield "A=A-1"  # decrease it again to get to the next item in the stack
+        yield "M=D+M"  # add them together and store the result in the same spot
+        yield "D=A+1"  # set D to the next location in the stack
+        yield "@SP"  # load the stack pointer into A
+        yield "M=D"  # and set it to the new topmost location of the stack
+
+    if inst.startswith("sub"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "M=M-D"
+        yield "D=A+1"
+        yield "@SP"
+        yield "M=D"
+
+    if inst.startswith("neg"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "M=-M"
+        yield "D=A+1"
+        yield "@SP"
+        yield "M=D"
+
+    if inst.startswith("eq"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "D=D-M"
+        yield "@SP"
+        yield "M=M-1"
+        yield "M=M-1"
+        yield f"@EQUAL.{label_count}"
+        yield "D;JEQ"
+        yield "@SP"
+        yield "A=M"
+        yield "M=0"
+        yield f"@END.{label_count}"
+        yield "0;JMP"
+        yield f"(EQUAL.{label_count})"
+        yield "@SP"
+        yield "A=M"
+        yield "M=-1"
+        yield f"(END.{label_count})"
+        yield "@SP"
+        yield "D=M+1"
+        yield "M=D"
+        label_count += 1
+
+    if inst.startswith("gt"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "D=D-M"
+        yield "@SP"
+        yield "M=M-1"
+        yield "M=M-1"
+        yield f"@EQUAL.{label_count}"
+        yield "D;JLT"
+        yield "@SP"
+        yield "A=M"
+        yield "M=0"
+        yield f"@END.{label_count}"
+        yield "0;JMP"
+        yield f"(EQUAL.{label_count})"
+        yield "@SP"
+        yield "A=M"
+        yield "M=-1"
+        yield f"(END.{label_count})"
+        yield "@SP"
+        yield "D=M+1"
+        yield "M=D"
+        label_count += 1
+
+    if inst.startswith("lt"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "D=D-M"
+        yield "@SP"
+        yield "M=M-1"
+        yield "M=M-1"
+        yield f"@EQUAL.{label_count}"
+        yield "D;JGT"
+        yield "@SP"
+        yield "A=M"
+        yield "M=0"
+        yield f"@END.{label_count}"
+        yield "0;JMP"
+        yield f"(EQUAL.{label_count})"
+        yield "@SP"
+        yield "A=M"
+        yield "M=-1"
+        yield f"(END.{label_count})"
+        yield "@SP"
+        yield "D=M+1"
+        yield "M=D"
+        label_count += 1
+
+    if inst.startswith("and"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "M=D&M"
+        yield "D=A+1"
+        yield "@SP"
+        yield "M=D"
+
+    if inst.startswith("or"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "D=M"
+        yield "A=A-1"
+        yield "M=D|M"
+        yield "D=A+1"
+        yield "@SP"
+        yield "M=D"
+
+    if inst.startswith("not"):
+        yield "@SP"
+        yield "A=M-1"
+        yield "M=!M"
+        yield "D=A+1"
+        yield "@SP"
+        yield "M=D"
+
+    return label_count
 
 
 def translate(f: TextIO) -> Generator[str, None, None]:
@@ -114,193 +296,34 @@ def translate(f: TextIO) -> Generator[str, None, None]:
     #    yield "M=D"
     #    yield "// end init"
 
+    current_function = ""
+    function_args = 0
+    function_locals = 0
+
     for line in f.read().splitlines():
         line = line.split("/")[0].strip()
 
-        if line.startswith("label"):
-            _, label = line.split(" ")
-            yield f"({label})"
-
-        if line.startswith("goto"):
-            _, label = line.split(" ")
-            yield f"// start goto {label}"
-            yield f"@{label}"
-            yield "0;JMP"
-            yield f"// end goto {label}"
-
-        if line.startswith("if-goto"):
-            _, label = line.split(" ")
-            yield f"// start if-goto {label}"
-            yield "@SP"
-            yield "AM=M-1"
-            yield "D=M"
-            yield f"@{label}"
-            yield "D;JNE"
-            yield f"// end if-goto {label}"
-
         if line.startswith("function"):
             _, name, n = line.split(" ")
+            current_function = name
+            function_args = int(n)
+            # No allocation or return address handling happens here
+            # we're just translating the body of the function into
+            # ASM, and storing data that's necessary for `call` to
+            # work.
             yield f"// start function {name}"
-            # pop the arguments from the stack
-            for i in range(int(n)):
-                yield from pop("argument", n)
-            # allocate space for local
-            yield "@LCL"
-            yield "M=300"
             yield f"({name})"
 
-        if line.startswith("return"):
-            # pop an item off the stack (this is the return value)
-            yield from pop("R13", is_ptr=False)
-            # pop the next item to get the return address
-            yield from pop("R14", is_ptr=False)
-            # push the return value back on the stack
-            yield from push("R13", is_ptr=False)
-            # jump to the return address
-            yield "@R14"
-            yield "0;JMP"
+        if current_function:
+            if " local " in line:
+                function_locals = max(function_locals, int(line.split(" ")[-1]))
 
-        if line.startswith("push"):
-            _, segment, n = line.split()
-            yield from push(segment, is_ptr=segment in PTR_SEGMENTS, offset=n)
+            if line.startswith("return"):
+                FUNCTIONS[current_function] = (function_args, function_locals)
 
-        if line.startswith("pop"):
-            _, segment, n = line.split()
-            yield from pop(segment, is_ptr=segment in PTR_SEGMENTS, offset=n)
+            current_function = ""
 
-        if line.startswith("add"):
-            yield "@SP"  # load the pointer to the next in the stack into A
-            yield "A=M-1"  # decrease it by 1 to get the topmost stack item address into A
-            yield "D=M"  # set that to D
-            yield "A=A-1"  # decrease it again to get to the next item in the stack
-            yield "M=D+M"  # add them together and store the result in the same spot
-            yield "D=A+1"  # set D to the next location in the stack
-            yield "@SP"  # load the stack pointer into A
-            yield "M=D"  # and set it to the new topmost location of the stack
-
-        if line.startswith("sub"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "M=M-D"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
-
-        if line.startswith("neg"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "M=-M"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
-
-        if line.startswith("eq"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "D=D-M"
-            yield "@SP"
-            yield "M=M-1"
-            yield "M=M-1"
-            yield f"@EQUAL.{label_count}"
-            yield "D;JEQ"
-            yield "@SP"
-            yield "A=M"
-            yield "M=0"
-            yield f"@END.{label_count}"
-            yield "0;JMP"
-            yield f"(EQUAL.{label_count})"
-            yield "@SP"
-            yield "A=M"
-            yield "M=-1"
-            yield f"(END.{label_count})"
-            yield "@SP"
-            yield "D=M+1"
-            yield "M=D"
-            label_count += 1
-
-        if line.startswith("gt"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "D=D-M"
-            yield "@SP"
-            yield "M=M-1"
-            yield "M=M-1"
-            yield f"@EQUAL.{label_count}"
-            yield "D;JLT"
-            yield "@SP"
-            yield "A=M"
-            yield "M=0"
-            yield f"@END.{label_count}"
-            yield "0;JMP"
-            yield f"(EQUAL.{label_count})"
-            yield "@SP"
-            yield "A=M"
-            yield "M=-1"
-            yield f"(END.{label_count})"
-            yield "@SP"
-            yield "D=M+1"
-            yield "M=D"
-            label_count += 1
-
-        if line.startswith("lt"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "D=D-M"
-            yield "@SP"
-            yield "M=M-1"
-            yield "M=M-1"
-            yield f"@EQUAL.{label_count}"
-            yield "D;JGT"
-            yield "@SP"
-            yield "A=M"
-            yield "M=0"
-            yield f"@END.{label_count}"
-            yield "0;JMP"
-            yield f"(EQUAL.{label_count})"
-            yield "@SP"
-            yield "A=M"
-            yield "M=-1"
-            yield f"(END.{label_count})"
-            yield "@SP"
-            yield "D=M+1"
-            yield "M=D"
-            label_count += 1
-
-        if line.startswith("and"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "M=D&M"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
-
-        if line.startswith("or"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "D=M"
-            yield "A=A-1"
-            yield "M=D|M"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
-
-        if line.startswith("not"):
-            yield "@SP"
-            yield "A=M-1"
-            yield "M=!M"
-            yield "D=A+1"
-            yield "@SP"
-            yield "M=D"
+        label_count = yield from translate_instruction(line, label_count)
 
 
 def main():
