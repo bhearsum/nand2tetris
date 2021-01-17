@@ -339,7 +339,7 @@ def init() -> Generator[str, None, None]:
     yield "@256"
     yield "D=A"
     yield "@SP"
-    yield "M=A"
+    yield "M=D"
     yield "@Sys.init"
     yield "0;JMP"
 

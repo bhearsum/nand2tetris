@@ -2,7 +2,7 @@
 @256
 D=A
 @SP
-M=A
+M=D
 @Sys.init
 0;JMP
 // start function Main.fibonacci
