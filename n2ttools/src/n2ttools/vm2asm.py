@@ -13,8 +13,8 @@ SEGMENT_SYMBOLS: Dict[str, str] = {
 
 PTR_SEGMENTS: Tuple[str, str, str, str] = ("argument", "local", "this", "that")
 
-# Function name -> (number of args, number of locals)
-FuncDef = Dict[str, Tuple[int, int]]
+# Function name -> number of locals
+FuncDef = Dict[str, int]
 
 
 def push(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, None]:
@@ -69,9 +69,7 @@ def pop(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, No
     yield f"// end pop {location} {offset}"
 
 
-def translate_instruction(
-    inst: str, label_count: int, functions: FuncDef, current_function: str = ""
-) -> Generator[str, None, int]:
+def translate_instruction(inst: str, label_count: int) -> Generator[str, None, int]:
     if inst.startswith("label"):
         _, label = inst.split(" ")
         yield f"({label})"
@@ -92,55 +90,6 @@ def translate_instruction(
         yield f"@{label}"
         yield "D;JNE"
         yield f"// end if-goto {label}"
-
-    # TODO: i think nested calls are not working?
-    if inst.startswith("return"):
-        # pop an item off the stack (this is the return value)
-        yield from pop("R13", is_ptr=False)
-        # then restore the previous that, this, local, and arg pointers,
-        # which are next on the stack
-        for ptr in ("THAT", "THIS", "ARG", "LCL"):
-            yield from pop(ptr, is_ptr=False)
-        # next is the return address
-        yield from pop("R14", is_ptr=False)
-        # pop local args away from the stack
-        # TODO: we don't actually care about these values
-        # so we could adjust the SP address instead
-        for i in range(functions[current_function][1] - 1):
-            yield from pop("temp", is_ptr=False)
-        # and then we have to pop away args, like we did for locals
-        # we also don't care about them
-        for i in range(functions[current_function][0] - 1):
-            yield from pop("temp", is_ptr=False)
-        # then push the return value back onto the stack
-        yield from push("R13", is_ptr=False)
-        # and jump to the return address
-        yield "@R14"
-        yield "A=M"
-        yield "0;JMP"
-
-    if inst.startswith("call"):
-        _, name, n_args = inst.split()
-        # push the return address onto the stack
-        yield from push(f"{name}_return_{label_count}", is_ptr=False)
-        for ptr in ("LCL", "ARG", "THIS", "THAT"):
-            yield from push(ptr, is_ptr=False)
-        # adjust ARG for the called function, which are behind
-        # the the return address, new LCL, et. al in the stack
-        yield "@SP"
-        for i in range(functions[name][0] + 1 + 5):
-            yield "A=A-1"
-        yield "D=A"
-        yield "@ARG"
-        yield "A=D"
-        # and adjust LCL
-        yield "@SP"
-        yield "D=A"
-        yield "@LCL"
-        yield "A=D"
-        # declare the return address label
-        yield f"({name}_return_{label_count})"
-        label_count += 1
 
     if inst.startswith("push"):
         _, segment, n = inst.split()
@@ -287,15 +236,17 @@ def translate_instruction(
     return label_count
 
 
-def translate(f: TextIO, functions: FuncDef) -> Generator[str, None, None]:
+def translate(f: TextIO) -> Generator[str, None, None]:
     label_count = 0
+    functions: FuncDef = {}
     current_function = ""
 
     for line in f.read().splitlines():
         line = line.split("/")[0].strip()
 
         if line.startswith("function"):
-            _, name, n = line.split(" ")
+            _, name, n_locals = line.split(" ")
+            functions[name] = int(n_locals)
             current_function = name
             # No allocation or return address handling happens here
             # we're just translating the body of the function into
@@ -303,35 +254,104 @@ def translate(f: TextIO, functions: FuncDef) -> Generator[str, None, None]:
             # work.
             yield f"// start function {name}"
             yield f"({name})"
+            for i in range(int(n_locals)):
+                yield from push("constant", False, 0)
 
-        label_count = yield from translate_instruction(line, label_count, functions, current_function)
+        if line.startswith("return"):
+            # pop an item off the stack (this is the return value)
+            # put it in the bottom most part of the caller's stack
+#            yield from pop("argument", is_ptr=True)
+#            # pop local args away from the stack
+#            # TODO: we don't actually care about these values
+#            # so we could adjust the SP address instead
+#            for i in range(functions[current_function] - 1):
+#                yield from pop("R14", is_ptr=False)
+#            # reset the stack pointer to the right location for the caller
+#            yield "@ARG"
+#            yield "D=M+1"
+#            yield "@SP"
+#            yield "A=D"
+#            # then restore the previous that, this, local, and arg pointers,
+#            # which are next on the stack
+#            for ptr in ("THAT", "THIS", "ARG", "LCL"):
+#                yield from pop(ptr, is_ptr=False)
+#            # next is the return address
+#            yield from pop("R13", is_ptr=False)
+#            # and jump to the return address
+#            yield "@R13"
+#            yield "A=M"
+#            yield "0;JMP"
+            # this logic is totally fucked. call logic is fine (or not)
+            # FRAME (R13) = LCL - GOOD
+            yield "@LCL"
+            yield "D=M"
+            yield "@R13"
+            yield "M=D"
+            # RET (R14) = FRAME - 5 - GOOD
+            for i in range(5):
+                yield "D=D-1"
+            yield "A=D"
+            yield "D=M"
+            yield "@R14"
+            yield "M=D"
+            # *ARG = pop() - GOOD
+            yield from pop("argument", is_ptr=True)
+            # SP = ARG+1 - GOOD
+            yield "@ARG"
+            yield "D=M+1"
+            yield "@SP"
+            yield "M=D"
+            # THAT = *FRAME - 1, etc. - GOOD i think?
+            yield "@R13"
+            yield "D=M-1"
+            yield "@THAT"
+            yield "M=D"
+            yield "D=D-1"
+            yield "@THIS"
+            yield "M=D"
+            yield "D=D-1"
+            yield "@ARG"
+            yield "M=D"
+            yield "D=D-1"
+            yield "@LCL"
+            yield "M=D"
+            # return to caller
+            yield "@R14"
+            yield "A=M"
+            yield "0;JMP"
+            current_function = ""
 
+        if line.startswith("call"):
+            _, name, n_args = line.split()
+            # push the return address onto the stack
+            yield from push("constant", False, f"{name}_return_{label_count}")
+            # TODO: it looks like this and that are pushed wrong
+            # we get absolutel values instead of addresses in the stack
+            # should pointer 0/1 get pushed instead?
+            for ptr in ("LCL", "ARG", "THIS", "THAT"):
+                yield from push(ptr, is_ptr=False)
+            # adjust ARG for the called function, which are behind
+            # the return address, new LCL, et. al in the stack
+            yield "@SP"
+            yield "A=M"
+            for i in range(int(n_args) + 5):
+                yield "A=A-1"
+            yield "D=A"
+            yield "@ARG"
+            yield "M=D"
+            # and adjust LCL
+            yield "@SP"
+            yield "D=M"
+            yield "@LCL"
+            yield "M=D"
+            # and jump to the function
+            yield f"@{name}"
+            yield "0;JMP"
+            # declare the return address label
+            yield f"({name}_return_{label_count})"
+            label_count += 1
 
-def parse_functions(f: TextIO) -> FuncDef:
-    functions: FuncDef = {}
-    current_function = ""
-    function_args = 0
-    function_locals = 0
-
-    for line in f.read().splitlines():
-        line = line.split("/")[0].strip()
-
-        if line.startswith("function"):
-            if current_function:
-                functions[current_function] = (function_args, function_locals)
-
-            _, name, n = line.split(" ")
-            current_function = name
-            function_args = int(n)
-
-        if current_function:
-            if " local " in line:
-                function_locals = max(function_locals, int(line.split(" ")[-1]) + 1)
-
-    if current_function:
-        functions[current_function] = (function_args, function_locals)
-
-    return functions
+        label_count = yield from translate_instruction(line, label_count)
 
 
 def init() -> Generator[str, None, None]:
@@ -351,16 +371,10 @@ def main():
         print("Output will be written to stdout")
         sys.exit(1)
 
-    functions: FuncDef = {}
-
-    for fn in sys.argv[1:]:
-        with open(fn) as f:
-            functions.update(parse_functions(f))
-
     for line in init():
         print(line)
 
     for fn in sys.argv[1:]:
         with open(fn) as f:
-            for line in translate(f, functions):
+            for line in translate(f):
                 print(line)
