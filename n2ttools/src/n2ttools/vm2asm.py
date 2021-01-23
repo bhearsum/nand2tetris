@@ -1,4 +1,5 @@
 import sys
+from io import StringIO
 from typing import Dict, Generator, TextIO, Tuple
 
 SEGMENT_SYMBOLS: Dict[str, str] = {
@@ -239,7 +240,6 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
 def translate(f: TextIO) -> Generator[str, None, None]:
     label_count = 0
     functions: FuncDef = {}
-    current_function = ""
 
     for line in f.read().splitlines():
         line = line.split("/")[0].strip()
@@ -247,7 +247,6 @@ def translate(f: TextIO) -> Generator[str, None, None]:
         if line.startswith("function"):
             _, name, n_locals = line.split(" ")
             functions[name] = int(n_locals)
-            current_function = name
             # No allocation or return address handling happens here
             # we're just translating the body of the function into
             # ASM, and storing data that's necessary for `call` to
@@ -260,27 +259,6 @@ def translate(f: TextIO) -> Generator[str, None, None]:
         if line.startswith("return"):
             # pop an item off the stack (this is the return value)
             # put it in the bottom most part of the caller's stack
-#            yield from pop("argument", is_ptr=True)
-#            # pop local args away from the stack
-#            # TODO: we don't actually care about these values
-#            # so we could adjust the SP address instead
-#            for i in range(functions[current_function] - 1):
-#                yield from pop("R14", is_ptr=False)
-#            # reset the stack pointer to the right location for the caller
-#            yield "@ARG"
-#            yield "D=M+1"
-#            yield "@SP"
-#            yield "A=D"
-#            # then restore the previous that, this, local, and arg pointers,
-#            # which are next on the stack
-#            for ptr in ("THAT", "THIS", "ARG", "LCL"):
-#                yield from pop(ptr, is_ptr=False)
-#            # next is the return address
-#            yield from pop("R13", is_ptr=False)
-#            # and jump to the return address
-#            yield "@R13"
-#            yield "A=M"
-#            yield "0;JMP"
             # this logic is totally fucked. call logic is fine (or not)
             # FRAME (R13) = LCL - GOOD
             yield "@LCL"
@@ -294,6 +272,9 @@ def translate(f: TextIO) -> Generator[str, None, None]:
             yield "D=M"
             yield "@R14"
             yield "M=D"
+            # LATEST THING: ARG appears to be set wrong for functions
+            # with zero args. eg: it's 246 in one case? either that, or
+            # the stack is fucked up at the end of Sys.main
             # *ARG = pop() - GOOD
             yield from pop("argument", is_ptr=True)
             # SP = ARG+1 - GOOD
@@ -303,31 +284,45 @@ def translate(f: TextIO) -> Generator[str, None, None]:
             yield "M=D"
             # THAT = *FRAME - 1, etc. - GOOD i think?
             yield "@R13"
-            yield "D=M-1"
+            yield "A=M-1"
+            yield "D=M"
             yield "@THAT"
             yield "M=D"
-            yield "D=D-1"
+
+            yield "@R13"
+            yield "A=M-1"
+            yield "A=A-1"
+            yield "D=M"
             yield "@THIS"
             yield "M=D"
-            yield "D=D-1"
+
+            yield "@R13"
+            yield "A=M-1"
+            yield "A=A-1"
+            yield "A=A-1"
+            yield "D=M"
             yield "@ARG"
             yield "M=D"
-            yield "D=D-1"
+
+            yield "@R13"
+            yield "A=M-1"
+            yield "A=A-1"
+            yield "A=A-1"
+            yield "A=A-1"
+            yield "D=M"
             yield "@LCL"
             yield "M=D"
+
             # return to caller
             yield "@R14"
             yield "A=M"
             yield "0;JMP"
-            current_function = ""
 
         if line.startswith("call"):
             _, name, n_args = line.split()
             # push the return address onto the stack
             yield from push("constant", False, f"{name}_return_{label_count}")
-            # TODO: it looks like this and that are pushed wrong
-            # we get absolutel values instead of addresses in the stack
-            # should pointer 0/1 get pushed instead?
+            # THIS IS FINE!!!!!!!!!!!!
             for ptr in ("LCL", "ARG", "THIS", "THAT"):
                 yield from push(ptr, is_ptr=False)
             # adjust ARG for the called function, which are behind
@@ -360,8 +355,7 @@ def init() -> Generator[str, None, None]:
     yield "D=A"
     yield "@SP"
     yield "M=D"
-    yield "@Sys.init"
-    yield "0;JMP"
+    yield from translate(StringIO("call Sys.init 0"))
 
 
 def main():
