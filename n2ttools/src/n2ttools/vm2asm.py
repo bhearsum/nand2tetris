@@ -1,6 +1,5 @@
 import sys
-from io import StringIO
-from typing import Dict, Generator, TextIO, Tuple
+from typing import Dict, Generator, Iterator, TextIO, Tuple, Union
 
 SEGMENT_SYMBOLS: Dict[str, str] = {
     "pointer": "3",
@@ -14,42 +13,40 @@ SEGMENT_SYMBOLS: Dict[str, str] = {
 
 PTR_SEGMENTS: Tuple[str, str, str, str] = ("argument", "local", "this", "that")
 
-# Function name -> number of locals
-FuncDef = Dict[str, int]
+
+def push_constant(val: Union[str, int]) -> Generator[str, None, None]:
+    yield f"// start push constant {val}"
+    yield f"@{val}"  # load the desired constant into the A register
+    yield "D=A"  # set it to D, so we can keep it after the next A inst
+    yield "@SP"  # load the pointer to the next spot in the stack into A
+    yield "A=M"  # Set A to the address of next spot in the stack
+    yield "M=D"  # Set the top of the stack to the desired constant
+    yield "D=A+1"  # set D to the next spot in the stack (current top + 1)
+    yield "@SP"  # load the address of the the former stack top
+    yield "M=D"  # and set it to the new top of the stack
+    yield f"// end push constant {val}"
 
 
 def push(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, None]:
-    if location == "constant":
-        yield f"// start push constant {offset}"
-        yield f"@{offset}"  # load the desired constant into the A register
-        yield "D=A"  # set it to D, so we can keep it after the next A inst
-        yield "@SP"  # load the pointer to the next spot in the stack into A
-        yield "A=M"  # Set A to the address of next spot in the stack
-        yield "M=D"  # Set the top of the stack to the desired constant
-        yield "D=A+1"  # set D to the next spot in the stack (current top + 1)
-        yield "@SP"  # load the address of the the former stack top
-        yield "M=D"  # and set it to the new top of the stack
-        yield f"// end push constant {offset}"
-    else:
-        # the segment may be a resolvable symbol
-        location = SEGMENT_SYMBOLS.get(location, location)
+    # the segment may be a resolvable symbol
+    location = SEGMENT_SYMBOLS.get(location, location)
 
-        yield f"// start push {location} {offset}"
-        yield f"@{location}"
-        # the caller may want us to treat the location as a pointer
-        if is_ptr:
-            yield "A=M"
-        # Get to the right offset
-        for i in range(offset):
-            yield "A=A+1"
-        yield "D=M"
-        yield "@SP"
+    yield f"// start push {location} {offset}"
+    yield f"@{location}"
+    # the caller may want us to treat the location as a pointer
+    if is_ptr:
         yield "A=M"
-        yield "M=D"
-        yield "D=A+1"
-        yield "@SP"
-        yield "M=D"
-        yield f"// end push {location} {offset}"
+    # Get to the right offset
+    for i in range(offset):
+        yield "A=A+1"
+    yield "D=M"
+    yield "@SP"
+    yield "A=M"
+    yield "M=D"
+    yield "D=A+1"
+    yield "@SP"
+    yield "M=D"
+    yield f"// end push {location} {offset}"
 
 
 def pop(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, None]:
@@ -70,7 +67,34 @@ def pop(location: str, is_ptr: bool, offset: int = 0) -> Generator[str, None, No
     yield f"// end pop {location} {offset}"
 
 
-def translate_instruction(inst: str, label_count: int) -> Generator[str, None, int]:
+def call(name: str, n_args: int, n_label: int) -> Generator[str, None, None]:
+    return_label = f"{name}_return_{n_label}"
+    yield from push_constant(return_label)
+    # store the pointers for the current function on the stack
+    for ptr in ("LCL", "ARG", "THIS", "THAT"):
+        yield from push(ptr, is_ptr=False)
+    # adjust ARG for the called function, which are behind
+    # the return address, new LCL, et. al in the stack
+    yield "@SP"
+    yield "A=M"
+    for i in range(int(n_args) + 5):
+        yield "A=A-1"
+    yield "D=A"
+    yield "@ARG"
+    yield "M=D"
+    # adjust LCL to the new tip of the stack
+    yield "@SP"
+    yield "D=M"
+    yield "@LCL"
+    yield "M=D"
+    # jump to the function
+    yield f"@{name}"
+    yield "0;JMP"
+    # and declare the return address label
+    yield f"({return_label})"
+
+
+def translate_instruction(inst: str, label_numbers: Iterator[int]) -> Generator[str, None, None]:
     if inst.startswith("label"):
         _, label = inst.split(" ")
         yield f"({label})"
@@ -94,11 +118,17 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
 
     if inst.startswith("push"):
         _, segment, n = inst.split()
-        yield from push(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
+        if segment == "constant":
+            yield from push_constant(n)
+        else:
+            yield from push(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
 
     if inst.startswith("pop"):
         _, segment, n = inst.split()
-        yield from pop(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
+        if segment == "constant":
+            yield from push_constant(n)
+        else:
+            yield from pop(segment, is_ptr=segment in PTR_SEGMENTS, offset=int(n))
 
     if inst.startswith("add"):
         yield "@SP"  # load the pointer to the next in the stack into A
@@ -129,6 +159,7 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "M=D"
 
     if inst.startswith("eq"):
+        n_label = next(label_numbers)
         yield "@SP"
         yield "A=M-1"
         yield "D=M"
@@ -137,24 +168,24 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "@SP"
         yield "M=M-1"
         yield "M=M-1"
-        yield f"@EQUAL.{label_count}"
+        yield f"@EQUAL.{n_label}"
         yield "D;JEQ"
         yield "@SP"
         yield "A=M"
         yield "M=0"
-        yield f"@END.{label_count}"
+        yield f"@END.{n_label}"
         yield "0;JMP"
-        yield f"(EQUAL.{label_count})"
+        yield f"(EQUAL.{n_label})"
         yield "@SP"
         yield "A=M"
         yield "M=-1"
-        yield f"(END.{label_count})"
+        yield f"(END.{n_label})"
         yield "@SP"
         yield "D=M+1"
         yield "M=D"
-        label_count += 1
 
     if inst.startswith("gt"):
+        n_label = next(label_numbers)
         yield "@SP"
         yield "A=M-1"
         yield "D=M"
@@ -163,24 +194,24 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "@SP"
         yield "M=M-1"
         yield "M=M-1"
-        yield f"@EQUAL.{label_count}"
+        yield f"@EQUAL.{n_label}"
         yield "D;JLT"
         yield "@SP"
         yield "A=M"
         yield "M=0"
-        yield f"@END.{label_count}"
+        yield f"@END.{n_label}"
         yield "0;JMP"
-        yield f"(EQUAL.{label_count})"
+        yield f"(EQUAL.{n_label})"
         yield "@SP"
         yield "A=M"
         yield "M=-1"
-        yield f"(END.{label_count})"
+        yield f"(END.{n_label})"
         yield "@SP"
         yield "D=M+1"
         yield "M=D"
-        label_count += 1
 
     if inst.startswith("lt"):
+        n_label = next(label_numbers)
         yield "@SP"
         yield "A=M-1"
         yield "D=M"
@@ -189,22 +220,21 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "@SP"
         yield "M=M-1"
         yield "M=M-1"
-        yield f"@EQUAL.{label_count}"
+        yield f"@EQUAL.{n_label}"
         yield "D;JGT"
         yield "@SP"
         yield "A=M"
         yield "M=0"
-        yield f"@END.{label_count}"
+        yield f"@END.{n_label}"
         yield "0;JMP"
-        yield f"(EQUAL.{label_count})"
+        yield f"(EQUAL.{n_label})"
         yield "@SP"
         yield "A=M"
         yield "M=-1"
-        yield f"(END.{label_count})"
+        yield f"(END.{n_label})"
         yield "@SP"
         yield "D=M+1"
         yield "M=D"
-        label_count += 1
 
     if inst.startswith("and"):
         yield "@SP"
@@ -234,55 +264,50 @@ def translate_instruction(inst: str, label_count: int) -> Generator[str, None, i
         yield "@SP"
         yield "M=D"
 
-    return label_count
-
 
 def translate(f: TextIO) -> Generator[str, None, None]:
-    label_count = 0
-    functions: FuncDef = {}
+    label_numbers = iter(range(100000))
 
     for line in f.read().splitlines():
         line = line.split("/")[0].strip()
 
         if line.startswith("function"):
             _, name, n_locals = line.split(" ")
-            functions[name] = int(n_locals)
             # No allocation or return address handling happens here
-            # we're just translating the body of the function into
-            # ASM, and storing data that's necessary for `call` to
-            # work.
+            # we're just declaring a label for the function and
+            # initializing any local variables it has, and then
+            # continuing the loop to translate the body of the function
+            # setting up it's stack is handled by a `call` instruction
+            # returning handling is handled by a return `return`
+            # instruction
             yield f"// start function {name}"
             yield f"({name})"
             for i in range(int(n_locals)):
-                yield from push("constant", False, 0)
+                yield from push_constant(0)
 
         if line.startswith("return"):
             # pop an item off the stack (this is the return value)
             # put it in the bottom most part of the caller's stack
-            # this logic is totally fucked. call logic is fine (or not)
-            # FRAME (R13) = LCL - GOOD
+            # FRAME (R13) = LCL
             yield "@LCL"
             yield "D=M"
             yield "@R13"
             yield "M=D"
-            # RET (R14) = FRAME - 5 - GOOD
+            # RET (R14) = FRAME - 5
             for i in range(5):
                 yield "D=D-1"
             yield "A=D"
             yield "D=M"
             yield "@R14"
             yield "M=D"
-            # LATEST THING: ARG appears to be set wrong for functions
-            # with zero args. eg: it's 246 in one case? either that, or
-            # the stack is fucked up at the end of Sys.main
-            # *ARG = pop() - GOOD
+            # *ARG = pop()
             yield from pop("argument", is_ptr=True)
-            # SP = ARG+1 - GOOD
+            # SP = ARG+1
             yield "@ARG"
             yield "D=M+1"
             yield "@SP"
             yield "M=D"
-            # THAT = *FRAME - 1, etc. - GOOD i think?
+            # THAT = *FRAME - 1, etc.
             yield "@R13"
             yield "A=M-1"
             yield "D=M"
@@ -321,32 +346,9 @@ def translate(f: TextIO) -> Generator[str, None, None]:
         if line.startswith("call"):
             _, name, n_args = line.split()
             # push the return address onto the stack
-            yield from push("constant", False, f"{name}_return_{label_count}")
-            # THIS IS FINE!!!!!!!!!!!!
-            for ptr in ("LCL", "ARG", "THIS", "THAT"):
-                yield from push(ptr, is_ptr=False)
-            # adjust ARG for the called function, which are behind
-            # the return address, new LCL, et. al in the stack
-            yield "@SP"
-            yield "A=M"
-            for i in range(int(n_args) + 5):
-                yield "A=A-1"
-            yield "D=A"
-            yield "@ARG"
-            yield "M=D"
-            # and adjust LCL
-            yield "@SP"
-            yield "D=M"
-            yield "@LCL"
-            yield "M=D"
-            # and jump to the function
-            yield f"@{name}"
-            yield "0;JMP"
-            # declare the return address label
-            yield f"({name}_return_{label_count})"
-            label_count += 1
+            yield from call(name, int(n_args), next(label_numbers))
 
-        label_count = yield from translate_instruction(line, label_count)
+        yield from translate_instruction(line, label_numbers)
 
 
 def init() -> Generator[str, None, None]:
@@ -355,7 +357,14 @@ def init() -> Generator[str, None, None]:
     yield "D=A"
     yield "@SP"
     yield "M=D"
-    yield from translate(StringIO("call Sys.init 0"))
+    # TODO: Calling Sys.init like this means the stack pointer moves
+    # to 261 before any real code runs. Things appear to work fine
+    # if simply jump to Sys.init directly, without letting `call`
+    # adjust the stack pointer. This is left as is because the
+    # nand2tetris tests fail if jump directly
+    # yield "@Sys.init"
+    # yield "0;JMP"
+    yield from call("Sys.init", 0, 0)
 
 
 def main():
@@ -365,6 +374,8 @@ def main():
         print("Output will be written to stdout")
         sys.exit(1)
 
+    # Init happens here because we may be translating multiple files
+    # and we only want to initialize once
     for line in init():
         print(line)
 
