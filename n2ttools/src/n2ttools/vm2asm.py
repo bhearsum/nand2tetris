@@ -266,6 +266,7 @@ def translate_instruction(inst: str, label_numbers: Iterator[int]) -> Generator[
 
 
 def translate(f: TextIO) -> Generator[str, None, None]:
+    # TODO: make sure we set up statics correctly
     label_numbers = iter(range(100000))
 
     for line in f.read().splitlines():
