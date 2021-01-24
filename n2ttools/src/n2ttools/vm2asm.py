@@ -265,12 +265,13 @@ def translate_instruction(inst: str, label_numbers: Iterator[int]) -> Generator[
         yield "M=D"
 
 
-def translate(f: TextIO) -> Generator[str, None, None]:
-    # TODO: make sure we set up statics correctly
-    label_numbers = iter(range(100000))
+def translate(f: TextIO, label_numbers: Iterator[int]) -> Generator[str, None, None]:
+    n_statics = 0
 
     for line in f.read().splitlines():
         line = line.split("/")[0].strip()
+        if "push static" in line or "pop static" in line:
+            n_statics = max(n_statics, int(line.split()[2]) + 1)
 
         if line.startswith("function"):
             _, name, n_locals = line.split(" ")
@@ -351,6 +352,11 @@ def translate(f: TextIO) -> Generator[str, None, None]:
 
         yield from translate_instruction(line, label_numbers)
 
+    # I really don't like modifying this global variable, but
+    # I haven't found a cleaner way to update the base addreses
+    # for the static segment.
+    SEGMENT_SYMBOLS["static"] = str(int(SEGMENT_SYMBOLS["static"]) + n_statics)
+
 
 def init() -> Generator[str, None, None]:
     yield "// begin init"
@@ -380,7 +386,9 @@ def main():
     for line in init():
         print(line)
 
+    label_numbers = iter(range(100000))
+
     for fn in sys.argv[1:]:
         with open(fn) as f:
-            for line in translate(f):
+            for line in translate(f, label_numbers):
                 print(line)
